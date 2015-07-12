@@ -1,0 +1,169 @@
+.\" Copyright (c) 2002 Andrew Stevenson. All Rights Reserved
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"     This product includes software developed by Andrew Stevenson.
+.\" 4. The name of Andrew Stevenson may not be used to endorse or promote
+.\"    products derived from this software without specific prior written
+.\"    permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY ANDREW STEVENSON ``AS IS'' AND ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+.\" IN NO EVENT SHALL ANDREW STEVENSON BE LIABLE FOR ANY DIRECT, INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+.\" NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+.\" DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+.\" THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+.\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+.\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\"
+.\" That said I'd appreciate a message if you use this software in anyway.
+.\"                                               Andrew <andrew@ugh.net.au>
+.\"
+.\" $Id: libhash_convenience.3,v 1.1.1.1 2002/01/13 16:22:31 andrew Exp $
+.\"
+.Dd January 14, 2002
+.Os UgH!
+.Dt "HASH CONVENIENCES" 3
+.Sh NAME
+.Nm hash_compare_int , hash_compare_string , hash_hash_int , hash_hash_string , hash_copy_int , hash_copy_string
+.Nd libhash convenience functions
+.Sh LIBRARY
+Hash Library (libhash, -lhash)
+.Sh SYNOPSIS
+.In sys/types.h
+.In hash.h
+.Ft int
+.Fn hash_compare_int "void *key1" "void *key2"
+.Ft int
+.Fn hash_compare_string "void *key1" "void *key2"
+.Ft u_int32_t
+.Fn hash_hash_int "void *key" "u_int32_t number_of_buckets"
+.Ft u_int32_t
+.Fn hash_hash_string "void *key" "u_int32_t number_of_buckets"
+.Ft int
+.Fn hash_copy_int "void **destination" "void *source"
+.Ft int
+.Fn hash_copy_string "void **destination" "void *source"
+.Sh DESCRIPTION
+These functions are provided by
+.Li libhash
+as a convenience for users. They are all designed to be passed to
+.Fn hash_initialise
+as one of the parameters.
+.Pp
+The functions
+.Fn hash_compare_int
+and
+.Fn hash_compare_string
+are designed to be passed to
+.Fn hash_initialise
+as the
+.Fa compare_keys
+argument.
+.Fn hash_compare_int
+works with keys that are integers and
+.Fn hash_compare_string
+works with keys that are nul terminated
+.Vt char
+arrays (strings).
+.Fn hash_compare_string
+performs a case sensistive lexicographical comparison.
+.Pp
+The functions
+.Fn hash_hash_int
+and
+.Fn hash_hash_string
+are designed to be passed to
+.Fn hash_initialise
+as the
+.Fa hash_function
+argument.
+.Fn hash_hash_int
+works with keys that are integers and
+.Fn hash_hash_string
+works with keys that are nul terminated
+.Vt char
+arrays (strings).
+.Pp
+The functions
+.Fn hash_copy_int
+and
+.Fn hash_copy_string
+are designed to be passed to
+.Fn hash_initialise
+as the
+.Fa duplicate_key
+argument.
+.Fn hash_copy_int
+works with keys that are integers and
+.Fn hash_copy_string
+works with keys that are nul terminated
+.Vt char
+arrays (strings).
+.Sh RETURN VALUES
+The
+.Fn hash_compare_int ,
+and
+.Fn hash_compare_string
+functions return a value less than 0 if
+.Fa key1
+is less than
+.Fa key2 ,
+a value equal to 0 if
+.Fa key1
+is equal to
+.Fa key2
+and a value greater than 0 if
+.Fa key1
+is greater than
+.Fa key2 .
+.Pp
+.Fn hash_hash_int
+and
+.Fn hash_hash_string
+return a number between 0 and
+.Fa number_of_buckets
+- 1.
+.Pp
+.Fn hash_copy_int
+and
+.Fn hash_copy_string
+return 0 on failure and set the global variable errno to indicate the error.
+.Sh EXAMPLES
+See the
+.Pa tests
+directory included in the distribution.
+.Sh ERRORS
+.Bl -tag
+.It Bq Er ENOMEM
+A call to malloc failed.
+.El
+.Sh SEE ALSO
+.Xr libhash 3
+.Sh HISTORY
+The
+.Li libhash
+library was written in January 2002 for
+.Li emmao
+(a program to kill off rogue processes under Solaris).
+libhash
+was written under
+.Fx 4.4 .
+.Sh AUTHORS
+.An "Andrew Stevenson" Aq andrew@ugh.net.au
+.Sh BUGS
+.Fn hash_hash_string
+is a very simple algorithm and good be improved greatly.
+.Pp
+Please report others to
+.Aq andrew@ugh.net.au .

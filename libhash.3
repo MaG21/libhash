@@ -1,0 +1,384 @@
+.\" Copyright (c) 2002 Andrew Stevenson. All Rights Reserved
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions
+.\" are met:
+.\" 1. Redistributions of source code must retain the above copyright
+.\"    notice, this list of conditions and the following disclaimer.
+.\" 2. Redistributions in binary form must reproduce the above copyright
+.\"    notice, this list of conditions and the following disclaimer in the
+.\"    documentation and/or other materials provided with the distribution.
+.\" 3. All advertising materials mentioning features or use of this software
+.\"    must display the following acknowledgement:
+.\"     This product includes software developed by Andrew Stevenson.
+.\" 4. The name of Andrew Stevenson may not be used to endorse or promote
+.\"    products derived from this software without specific prior written
+.\"    permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY ANDREW STEVENSON ``AS IS'' AND ANY EXPRESS OR
+.\" IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+.\" OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+.\" IN NO EVENT SHALL ANDREW STEVENSON BE LIABLE FOR ANY DIRECT, INDIRECT,
+.\" INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+.\" NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+.\" DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+.\" THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+.\" (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+.\" THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+.\"
+.\" That said I'd appreciate a message if you use this software in anyway.
+.\"                                               Andrew <andrew@ugh.net.au>
+.\"
+.\" $Id: libhash.3,v 1.1.1.1 2002/01/13 16:22:31 andrew Exp $
+.\"
+.Dd January 13, 2002
+.Os UgH!
+.Dt HASH 3
+.Sh NAME
+.Nm hash_initialise , hash_insert , hash_retrieve , hash_delete , hash_iterator_initialise , hash_fetch_next , hash_iterator_deinitialise , hash_deinitialise
+.Nd hash table manipulation functions
+.Sh LIBRARY
+Hash Library (libhash, -lhash)
+.Sh SYNOPSIS
+.In sys/types.h
+.In hash.h
+.Ft int
+.Fo hash_initialise
+.Fa "hash *h"
+.Fa "u_int32_t number_of_buckets"
+.Fa "u_int32_t (*hash_function)(void *key, u_int32_t number_of_buckets)"
+.Fa "int (*compare_keys)(void *key1, void *key2)"
+.Fa "int (*duplicate_key)(void **destination, void *source)"
+.Fa "void (*free_key)(void *key)"
+.Fa "void (*free_value)(void *value)"
+.Fc
+.Ft int
+.Fn hash_insert "hash *h" "void *key" "void *value"
+.Ft int
+.Fn hash_retrieve "hash *h" "void *key" "void **value"
+.Ft int
+.Fn hash_delete "hash *h" "void *key"
+.Ft int
+.Fn hash_iterator_initialise "hash *h" "struct hash_iterator *it"
+.Ft int
+.Fn hash_fetch_next "hash *h" "struct hash_iterator *it" "void **key" "void **value"
+.Ft int
+.Fn hash_iterator_deinitialise "hash *h" "struct hash_iterator *it"
+.Ft void
+.Fn hash_deinitialise "hash *h"
+.Sh DESCRIPTION
+These functions manipulate a hash table, sometimes known as an associative
+array. A hash table is a data structure that allows you to store "values"
+indexed by "key". A key can be any kind of data structure but is
+commonly a string. Indexing by integer is a reasonable way to simulate a
+sparse array. The data can also be any kind of data structure, user-defined or
+built-in.
+.Pp
+To allow any kind of data structure to be used as a key or a value a
+.Vt void *
+is used to represent each. While giving flexibility, this use of
+.Vt void *
+does force the user to supply functions to perform all manipulation and
+examination of the keys - it is not possible for
+.Li libhash
+to check for equality, copy or delete keys on its own. Pointers to these user
+nominated functions are provided to the
+.Fn hash_initialise
+function, called before any other operations on the hash table are allowed.
+.Pp
+The
+.Fn hash_initialise
+function is called to initialise the hash table pointed to by
+.Fa h .
+It must be called before any other hash function on the hash table
+.Fa h .
+.Pp
+The parameter
+.Fa number_of_buckets
+sets the "size" of the hash table - the number of buckets that the data is
+distributed over. For the best performance the general rule is that this
+number should be prime and approximately twice the size of the expected
+data set. Chaining is used in case of collisions so there is no actual limit
+to the amount of data that can be stored, subject to system resource limits.
+.Pp
+The parameter
+.Fa hash_function
+is a pointer to the hash function to be used. The hash function's job is to
+map keys to buckets so it must be aware of the data structure being used for
+keys and must return a number between 0 and
+.Fa number_of_buckets
+- 1 inclusive. A good hash function maps the data set evenly over all buckets.
+See
+.Xr hash_hash_int 3
+for some provided hash functions. This argument may be
+.Dv NULL
+to use a provided function that works with strings.
+.Pp
+The parameter
+.Fa compare_keys
+is a pointer to a function that can provide ordering information about 2 keys.
+This function should return a value less than 0 if
+.Fa key1
+is less than
+.Fa key2 ,
+greater than 0 if
+.Fa key1
+is greater than
+.Fa key2
+and 0 if
+.Fa key1
+is equal to
+.Fa key2 .
+This argument may be
+.Dv NULL
+to use a provided function that works with strings.
+.Pp
+The parameter
+.Fa duplicate_key
+is a pointer to a function that will allocate memory and make a copy of a key,
+the original located at the address
+.Fa source
+and the address of the new copy to be stored at
+.Fa destination .
+See
+.Xr hash_copy_int 3
+for some provided duplicate functions. This argument may be
+.Dv NULL
+to use a provided function that works with strings.
+.Pp
+The parameter
+.Fa free_key
+is a pointer to a function that will free the memory used by a key allocated
+with
+.Fa duplicate_key .
+This argument may be
+.Dv NULL
+if keys don't need "freeing".
+.Pp
+The parameter
+.Fa free_value
+is a pointer to a function that will free the memory used by a value stored in
+the hash table. This argument may be
+.Dv NULL
+if values don't need "freeing". The ability to pass
+.Dv NULL
+is useful when data added to the hash table is already part of another data
+structure or memory management scheme - the hash table being used as an index.
+.Pp
+The
+.Fn hash_insert
+function is used to add key/value pairs to the hash table.
+.Fa h
+is a pointer to the hash table to which the pair is to be added.
+.Fa key
+is the key under which the
+.Fa value
+is to be indexed under.
+.Fa value
+is the value to be stored. The
+.Fn hash_insert
+function will make a copy of
+.Fa key
+but only store a pointer to
+.Fa value
+so it is the caller's responsibility to ensure the memory used by
+.Fa value
+is not lost prematurely.
+.Pp
+The
+.Fn hash_retrieve
+function is used to retieve data previously stored in the hash table by the
+function
+.Fn hash_insert .
+The parameter
+.Fa h
+is a pointer to the hash table to retrieve from. The parameter
+.Fa key
+is a pointer to a key considered equivalent (by the function
+.Fa compare_keys
+provided to
+.Fn hash_initialise )
+to the key used to store the value. The parameter
+.Fa value
+is a pointer to a location at which to store the address of the data.
+.Pp
+The
+.Fn hash_delete
+function is used to remove a key/value pair from a hash table. The parameter
+.Fa h
+is a pointer to the hash table from which to remove the pair. The parameter
+.Fa key
+is a pointer to a key considered equivalent (by the function
+.Fa compare_keys
+provided to
+.Fn hash_initialise )
+to the key used to store the pair. The functions pointed to by the parameters
+.Fa free_key
+and 
+.Fa free_value
+provided to the
+.Fn hash_initialise
+function are used (if not
+.Dv NULL )
+to free the memory used by the key/value pair. It is important to note that if
+you are using data retrieved by
+.Fn hash_retrieve
+and then call
+.Fn hash_delete
+on the same pair, the pointer returned by
+.Fn hash_retrieve
+is invalid.
+.Pp
+The function
+.Fn hash_iterator_initialise
+is used to initialise a
+.Vt struct hash_iterator .
+A
+.Vt struct hash_iterator ,
+in combination with
+.Fn hash_fetch_next ,
+is used to allow a caller to iterate over all key/value pairs stored in a hash
+table. The parameter
+.Fa h
+is a pointer to the hash table to be iterated over. The
+.Fa it
+parameter is a pointer to the
+.Vt struct hash_iterator .
+.Fn hash_iterator_initialise
+must be called before any other functions that use the
+.Vt struct hash_iterator .
+.Pp
+The
+.Fn hash_fetch_next
+function fetches the "next" key/value pair from a hash table. By repeatedly
+calling it, this function can be used to iterate through all key/value pairs
+stored in a hash table. Note that the pairs are returned in an order which is
+an artifact of the internal workings of the library and probably meaningless
+to a user. The parameter
+.Fa h
+is a pointer to the hash table to iterate over (this should be the same as the
+.Fa h
+argument provided to
+.Fn hash_iterator_initialise ) .
+The parameter
+.Fa it
+is a pointer to the
+.Vt struct hash_iterator
+previously initialised with
+.Fn hash_iterator_initialise .
+The parameters
+.Fa key
+and
+.Fa value
+are pointers to locations to store the addresses of the key and value fetched.
+If
+.Fn hash_fetch_next
+is called after the last pair in the hash table has been fetched then 0 is
+returned, nothing is stored at
+.Fa key
+or
+.Fa value ,
+and the
+.Vt struct hash_iterator
+is reset so the next call to
+.Fn hash_fetch_next
+will return the first pair in the hash table. If a pair is added to the table
+whilst a
+.Vt struct hash_iterator
+is active it may or may not be returned by
+.Fn hash_fetch_next
+before the
+.Vt struct hash_iterator
+is reset. The calling of
+.Fn hash_delete
+while a
+.Vt struct hash_iterator
+is active is safe for any pair that has already been returned by
+.Fn hash_fetch_next .
+.Pp
+The function
+.Fn hash_iterator_deinitialise
+should be called when finished with a
+.Vt struct hash_iterator .
+The parameter
+.Fa h
+is a pointer to the hash table originally passed to
+.Fn hash_iterator_initialise .
+The parameter
+.Fa it
+is the
+.Vt struct hash_iterator
+to be deinitialised. This function should be called before the memory used by
+a
+.Vt struct hash_iterator
+is disposed of.
+.Pp
+The function
+.Fn hash_deinitialise
+is used to dispose of a hash table. The parameter
+.Fa h
+is the hash table to dispose of. After calling
+.Fn hash_deinitialise
+all pointers returned by
+.Fn hash_retrieve
+or
+.Fn hash_fetch_next
+are invalid.
+.Sh IMPLEMENTATION NOTES
+Upon collision (where 2 keys are mapped by the hash function to the same
+bucket) ordered linked lists are used. On retrieval a sequential search is
+used. On a hash table that is overly full (has a lot of collisions) retrieval
+time is therefore O(n/(2 * number_of_buckets)) as opposed to O(1) for a
+sparsely populated table. Therefore it is wise to set number_of_buckets to be
+large enough and to use a hash function well suited for your data.
+.Sh RETURN VALUES
+The
+.Fn hash_initialise ,
+.Fn hash_insert ,
+.Fn hash_retrieve ,
+.Fn hash_delete ,
+.Fn hash_iterator_initialise ,
+.Fn hash_fetch_next
+and
+.Fn hash_iterator_deinitialise
+functions return 0 on failure and set the global variable
+.Va errno
+to indicate the error.
+.Pp
+The
+.Fn hash_deinitialise
+function returns no value.
+.Sh EXAMPLES
+See the
+.Pa tests
+directory included in the distribution.
+.Sh ERRORS
+.Bl -tag
+.It Bq Er ENOENT
+There was no value stored for the provided
+.Fa key 
+or in the case of
+.Fn hash_fetch_next
+the end of the hash table has been reached.
+.It Bq Er ENOMEM
+A call to malloc failed.
+.El
+.Sh SEE ALSO
+.Xr dbopen 3 ,
+.Xr emmao 8 ,
+.Xr libhash_convenience 3 ,
+.Xr queue 3
+.Sh HISTORY
+The
+.Li libhash
+library was written in January 2002 for
+.Li emmao
+(a program to kill off rogue processes under Solaris).
+libhash
+was written under
+.Fx 4.4 .
+.Sh AUTHORS
+.An "Andrew Stevenson" Aq andrew@ugh.net.au
+.Sh BUGS
+Please report them to
+.Aq andrew@ugh.net.au .
